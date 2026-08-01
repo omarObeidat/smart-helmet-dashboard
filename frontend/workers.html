@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en">
+<title>Smart Helmet — Worker Profiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F8FA; --panel:#FFFFFF; --panel-2:#F0F2F5;
+  --line: #E2E6EC; --line-strong: #C7CEDA;
+  --text:#1A2433; --text-dim:#5B6B7F;
+  --orange:#FF6B35; --orange-dark:#D85420;
+  --green:#15803D; --yellow:#B45309; --red:#DC2626;
+  --mono:'JetBrains Mono', monospace; --display:'Space Grotesk', sans-serif; --body:'Inter', sans-serif;
+  --shadow: 0 1px 2px rgba(26,36,51,0.06), 0 1px 6px rgba(26,36,51,0.04);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{ background:var(--bg); color:var(--text); font-family:var(--body); min-height:100vh; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; padding:16px 28px;
+  border-bottom:1px solid var(--line); background:var(--panel);
+  position:sticky; top:0; z-index:10; box-shadow: var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:14px;}
+.brand-mark{
+  width:38px; height:38px; border-radius:8px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; color:#fff; font-size:13px;
+}
+.brand-text h1{font-family:var(--display); font-size:18px; font-weight:700; color:var(--text);}
+.brand-text p{font-family:var(--mono); font-size:11px; color:var(--text-dim); letter-spacing:0.8px; text-transform:uppercase;}
+.nav-tabs{display:flex; gap:4px;}
+.nav-tabs a{font-family:var(--mono); font-size:12px; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-dim); text-decoration:none; padding:8px 16px; border-radius:6px; border:1px solid transparent;}
+.nav-tabs a.active{color:var(--orange-dark); border-color:var(--orange); background:#FFF1EB;}
+.nav-tabs a:hover:not(.active){background:var(--panel-2);}
+
+.main{padding:28px; max-width:1200px; margin:0 auto;}
+.section-title{font-family:var(--mono); font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:14px; display:flex; align-items:center; gap:10px;}
+.section-title::after{content:''; flex:1; height:1px; background:var(--line);}
+
+.grid-2{display:grid; grid-template-columns: 1fr 1.3fr; gap:24px; align-items:start;}
+
+/* ---------- Input form ---------- */
+.form-panel{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:24px; box-shadow: var(--shadow);}
+.form-panel h2{font-family:var(--display); font-size:16px; margin-bottom:18px; color:var(--text);}
+.form-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;}
+.form-group{margin-bottom:14px;}
+.form-group.full{grid-column:1/-1;}
+label{display:block; font-family:var(--mono); font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;}
+input, select{
+  width:100%; background:var(--panel); border:1px solid var(--line-strong); border-radius:6px; color:var(--text);
+  padding:9px 11px; font-family:var(--body); font-size:13px;
+}
+input:focus, select:focus{outline:none; border-color:var(--orange); box-shadow: 0 0 0 3px rgba(255,107,53,0.12);}
+.checkbox-row{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+.checkbox-row input{width:auto;}
+.checkbox-row label{margin:0; text-transform:none; font-size:13px; color:var(--text);}
+
+.divider-label{
+  font-family:var(--mono); font-size:10px; color:var(--orange-dark); text-transform:uppercase;
+  letter-spacing:1px; margin:18px 0 10px; padding-top:14px; border-top:1px dashed var(--line-strong);
+}
+
+.btn{
+  font-family:var(--mono); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;
+  padding:11px 20px; border-radius:6px; border:1px solid var(--orange); background:var(--orange); color:#fff;
+  cursor:pointer; transition:all 0.15s;
+}
+.btn:hover{background:var(--orange-dark); border-color:var(--orange-dark);}
+.btn.secondary{border-color:var(--line-strong); color:var(--text-dim); background:var(--panel);}
+.btn.secondary:hover{background:var(--panel-2);}
+.btn-row{display:flex; gap:10px; margin-top:18px;}
+
+/* ---------- Workers table ---------- */
+.table-panel{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:0; overflow:hidden; box-shadow: var(--shadow);}
+.table-panel h2{font-family:var(--display); font-size:16px; padding:18px 20px; border-bottom:1px solid var(--line); color:var(--text);}
+table{width:100%; border-collapse:collapse;}
+th{
+  font-family:var(--mono); font-size:10px; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:0.5px; text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel-2);
+}
+td{padding:12px 14px; font-size:13px; border-bottom:1px solid var(--line); color:var(--text);}
+tr:hover td{background:#FFF8F5;}
+.bmi-tag{font-family:var(--mono); font-size:11px; padding:2px 8px; border:1px solid var(--line-strong); border-radius:4px;}
+.row-actions{display:flex; gap:8px;}
+.icon-btn{
+  background:var(--panel); border:1px solid var(--line-strong); border-radius:5px; color:var(--text-dim);
+  font-family:var(--mono); font-size:11px; padding:4px 8px; cursor:pointer;
+}
+.icon-btn:hover{border-color:var(--orange); color:var(--orange-dark);}
+.icon-btn.danger:hover{border-color:var(--red); color:var(--red);}
+.empty-row td{text-align:center; color:var(--text-dim); padding:30px;}
+
+small{color:var(--text-dim);}
+
+@media(max-width:900px){
+  .grid-2{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+  .nav-tabs{display:none;}
+}
+</style>
+</head>
+<body class="notranslate" translate="no">
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">SH</div>
+    <div class="brand-text">
+      <h1>Smart Helmet</h1>
+      <p>Worker Profile Management</p>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <a href="index.html">Live Monitor</a>
+    <a href="workers.html" class="active">Worker Profiles</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="grid-2">
+
+    <!-- ===== Input form ===== -->
+    <div class="form-panel">
+      <h2 id="formTitle">Add New Worker</h2>
+      <form id="workerForm">
+
+        <div class="divider-label">Identification</div>
+        <div class="form-group">
+          <label>Worker ID *</label>
+          <input type="text" id="worker_id" required placeholder="W-001">
+        </div>
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="full_name" required placeholder="John Smith">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department</label>
+            <input type="text" id="department" placeholder="Production">
+          </div>
+          <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" id="role" placeholder="Welder">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Helmet ID</label>
+          <input type="text" id="helmet_id" placeholder="e.g. helmet-001, helmet-002 ...">
+          <small style="font-size:11px; display:block; margin-top:4px;">
+            Must exactly match the HELMET_ID value flashed on that physical ESP32 device's firmware.
+          </small>
+        </div>
+
+        <div class="divider-label">Emergency Information (for emergencies only)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Blood Type</label>
+            <select id="blood_type">
+              <option value="">— Select —</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+              <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Known Allergies</label>
+            <input type="text" id="known_allergies" placeholder="None">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Emergency Contact Name</label>
+            <input type="text" id="emergency_contact_name">
+          </div>
+          <div class="form-group">
+            <label>Emergency Contact Phone</label>
+            <input type="text" id="emergency_contact_phone">
+          </div>
+        </div>
+
+        <div class="divider-label">Risk Factors (Age / Health Factor)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="age" min="16" max="80">
+          </div>
+          <div class="form-group">
+            <label>Years of Experience</label>
+            <input type="number" id="years_of_experience" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="weight_kg" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" id="height_cm" step="0.1">
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="has_respiratory_condition">
+          <label for="has_respiratory_condition">Has chronic respiratory condition</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="has_cardiac_condition">
+          <label for="has_cardiac_condition">Has cardiac condition</label>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn">Save Worker</button>
+          <button type="button" class="btn secondary" id="resetBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ===== Workers table ===== -->
+    <div class="table-panel">
+      <h2>Registered Workers</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Helmet</th><th>Age</th><th>BMI</th><th>Blood Type</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="workersTableBody">
+          <tr class="empty-row"><td colspan="7">No workers registered yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let editingId = null;
+
+const form = document.getElementById('workerForm');
+const fields = ['worker_id','full_name','department','role','helmet_id','blood_type',
+  'known_allergies','emergency_contact_name','emergency_contact_phone','age',
+  'years_of_experience','weight_kg','height_cm'];
+
+function getFormData(){
+  const data = {};
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    let v = el.value;
+    if(['age','years_of_experience'].includes(f)) v = v ? parseInt(v) : null;
+    if(['weight_kg','height_cm'].includes(f)) v = v ? parseFloat(v) : null;
+    data[f] = v || null;
+  });
+  data.has_respiratory_condition = document.getElementById('has_respiratory_condition').checked;
+  data.has_cardiac_condition = document.getElementById('has_cardiac_condition').checked;
+  return data;
+}
+
+function fillForm(w){
+  fields.forEach(f => { if(document.getElementById(f)) document.getElementById(f).value = w[f] ?? ''; });
+  document.getElementById('has_respiratory_condition').checked = !!w.has_respiratory_condition;
+  document.getElementById('has_cardiac_condition').checked = !!w.has_cardiac_condition;
+}
+
+function resetForm(){
+  form.reset();
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'Add New Worker';
+  document.getElementById('worker_id').disabled = false;
+}
+
+document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = getFormData();
+  try{
+    let res;
+    if(editingId){
+      res = await fetch(`${API_BASE}/workers/${editingId}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+      });
+    } else {
+      res = await fetch(`${API_BASE}/workers`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+      });
+    }
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      alert('Could not save worker:\n' + (err.detail || `Server returned ${res.status}`));
+      return;
+    }
+    resetForm();
+    loadWorkers();
+  }catch(err){ alert('An error occurred, please check the server connection'); }
+});
+
+let workersCache = [];
+
+async function loadWorkers(){
+  try{
+    const res = await fetch(`${API_BASE}/workers`);
+    const workers = await res.json();
+    workersCache = workers;
+    const tbody = document.getElementById('workersTableBody');
+    if(workers.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No workers registered yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = workers.map((w, i) => `
+      <tr>
+        <td style="font-family:var(--mono)">${escapeHtml(w.worker_id)}</td>
+        <td>${escapeHtml(w.full_name)}</td>
+        <td style="font-family:var(--mono); color:var(--text-dim)">${escapeHtml(w.helmet_id) || '—'}</td>
+        <td>${w.age ?? '—'}</td>
+        <td>${w.bmi ? `<span class="bmi-tag">${escapeHtml(w.bmi)}</span>` : '—'}</td>
+        <td>${escapeHtml(w.blood_type) || '—'}</td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn" data-edit="${i}">Edit</button>
+            <button class="icon-btn danger" data-delete="${i}">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }catch(e){ console.error(e); }
+}
+
+document.getElementById('workersTableBody').addEventListener('click', (e)=>{
+  const editBtn = e.target.closest('[data-edit]');
+  const delBtn = e.target.closest('[data-delete]');
+  if(editBtn) editWorker(workersCache[parseInt(editBtn.dataset.edit)]);
+  if(delBtn) deleteWorker(workersCache[parseInt(delBtn.dataset.delete)].worker_id);
+});
+
+function editWorker(w){
+  if(!w) return;
+  fillForm(w);
+  editingId = w.worker_id;
+  document.getElementById('worker_id').disabled = true;
+  document.getElementById('formTitle').textContent = 'Edit Worker';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteWorker(id){
+  if(!confirm('Confirm deleting this worker?')) return;
+  try{
+    const res = await fetch(`${API_BASE}/workers/${id}`, {method:'DELETE'});
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      alert('Could not delete worker:\n' + (err.detail || `Server returned ${res.status}`));
+    }
+  }catch(e){ alert('Server unreachable — worker was not deleted.'); }
+  loadWorkers();
+}
+
+loadWorkers();
+</script>
+
+</body>
+</html>

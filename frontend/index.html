@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en">
+<title>Smart Helmet — Live Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F7F8FA;
+  --panel:#FFFFFF;
+  --panel-2:#F0F2F5;
+  --line: #E2E6EC;
+  --line-strong: #C7CEDA;
+  --text:#1A2433;
+  --text-dim:#5B6B7F;
+  --orange:#FF6B35;
+  --orange-dark:#D85420;
+  --green:#15803D;
+  --green-bg:#ECFDF3;
+  --yellow:#B45309;
+  --yellow-bg:#FFFBEB;
+  --red:#DC2626;
+  --red-bg:#FEF2F2;
+  --mono: 'JetBrains Mono', monospace;
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'Inter', sans-serif;
+  --shadow: 0 1px 2px rgba(26,36,51,0.06), 0 1px 6px rgba(26,36,51,0.04);
+  --shadow-md: 0 2px 8px rgba(26,36,51,0.08), 0 4px 16px rgba(26,36,51,0.05);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  min-height:100vh;
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 28px;
+  border-bottom:1px solid var(--line);
+  background:var(--panel);
+  position:sticky; top:0; z-index:10;
+  box-shadow: var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:14px;}
+.brand-mark{
+  width:38px; height:38px; border-radius:8px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; color:#fff; font-size:13px;
+}
+.brand-text h1{font-family:var(--display); font-size:18px; font-weight:700; letter-spacing:0.2px; color:var(--text);}
+.brand-text p{font-family:var(--mono); font-size:11px; color:var(--text-dim); letter-spacing:0.8px; text-transform:uppercase;}
+
+.nav-tabs{display:flex; gap:4px;}
+.nav-tabs a{
+  font-family:var(--mono); font-size:12px; letter-spacing:0.5px; text-transform:uppercase;
+  color:var(--text-dim); text-decoration:none; padding:8px 16px; border-radius:6px;
+  border:1px solid transparent;
+}
+.nav-tabs a.active{color:var(--orange-dark); border-color:var(--orange); background:#FFF1EB;}
+.nav-tabs a:hover:not(.active){background:var(--panel-2);}
+
+.topbar-right{display:flex; align-items:center; gap:10px;}
+
+.action-btn{
+  font-family:var(--mono); font-size:11px; letter-spacing:0.4px; text-transform:uppercase;
+  padding:9px 14px; border-radius:6px; border:1px solid var(--line-strong); background:var(--panel);
+  color:var(--text-dim); cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:6px;
+}
+.action-btn:hover{border-color:var(--orange); color:var(--orange-dark); background:#FFF8F5;}
+.action-btn:disabled{opacity:0.5; cursor:default;}
+
+.emergency-btn{
+  font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+  padding:9px 16px; border-radius:6px; border:none; background:var(--red);
+  color:#fff; cursor:pointer; transition:all 0.15s; box-shadow: var(--shadow);
+}
+.emergency-btn:hover{background:#B91C1C; transform:translateY(-1px); box-shadow: var(--shadow-md);}
+
+.conn-status{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; color:var(--text-dim); margin-left:6px;}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--green);}
+.dot.offline{background:var(--red);}
+
+/* ---------- Page body ---------- */
+.layout{display:grid; grid-template-columns: 270px 1fr; min-height: calc(100vh - 72px);}
+
+.sidebar{
+  border-right:1px solid var(--line);
+  padding:24px 18px;
+  background: var(--panel);
+}
+.sidebar-label{font-family:var(--mono); font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px;}
+.worker-select{
+  width:100%; background:var(--panel); border:1px solid var(--line-strong); border-radius:6px; color:var(--text);
+  padding:10px 12px; font-family:var(--body); font-size:14px; margin-bottom:24px;
+}
+
+.risk-gauge{
+  border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:20px; background:var(--panel);
+  position:relative; overflow:hidden; box-shadow: var(--shadow);
+}
+.risk-gauge::before{
+  content:''; position:absolute; top:0; left:0; width:5px; height:100%;
+  background: var(--green);
+  transition: background 0.3s;
+}
+.risk-gauge.medium::before{background:var(--yellow);}
+.risk-gauge.high::before{background:var(--orange);}
+.risk-gauge.critical::before{background:var(--red); animation: pulse-bg 1s infinite;}
+@keyframes pulse-bg{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+.risk-gauge .label{font-family:var(--mono); font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px;}
+.risk-gauge .value{font-family:var(--display); font-size:42px; font-weight:700; margin:6px 0; color:var(--text);}
+.risk-gauge .status-badge{
+  display:inline-block; font-family:var(--mono); font-size:11px; font-weight:700; padding:4px 10px; border-radius:5px;
+  text-transform:uppercase; letter-spacing:0.5px;
+}
+
+.incidents{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:16px; box-shadow: var(--shadow);}
+.incident-item{
+  padding:10px 0; border-bottom:1px solid var(--line); font-size:12px;
+}
+.incident-item:last-child{border-bottom:none;}
+.incident-item .itype{font-family:var(--mono); font-weight:700; color:var(--red); display:block;}
+.incident-item .itime{color:var(--text-dim); font-family:var(--mono); font-size:10px;}
+
+/* ---------- Main content ---------- */
+.main{padding:28px;}
+.section-title{
+  font-family:var(--mono); font-size:12px; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:1.2px; margin-bottom:14px; display:flex; align-items:center; gap:10px;
+}
+.section-title::after{content:''; flex:1; height:1px; background:var(--line);}
+
+.cards-grid{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:14px; margin-bottom:32px;
+}
+.metric-card{
+  border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:18px;
+  position:relative; box-shadow: var(--shadow);
+}
+.metric-card .m-label{font-family:var(--mono); font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.6px;}
+.metric-card .m-value{font-family:var(--mono); font-size:28px; font-weight:600; margin-top:8px; color:var(--text);}
+.metric-card .m-unit{font-size:13px; color:var(--text-dim); margin-left:4px;}
+.metric-card .m-status{
+  position:absolute; top:14px; right:14px; width:10px; height:10px; border-radius:50%;
+}
+.status-safe{background:var(--green);}
+.status-moderate{background:var(--yellow);}
+.status-dangerous{background:var(--red);}
+
+.led-row{display:flex; align-items:center; gap:10px; margin-top:12px;}
+.led{
+  width:18px; height:18px; border-radius:50%;
+  background:var(--panel-2); border:1px solid var(--line-strong);
+  transition: all 0.25s;
+}
+.led.red.on{background:var(--red); border-color:var(--red); box-shadow:0 0 10px rgba(220,38,38,0.55);}
+.led.yellow.on{background:#EAB308; border-color:#EAB308; box-shadow:0 0 10px rgba(234,179,8,0.55);}
+.led.green.on{background:#22C55E; border-color:#22C55E; box-shadow:0 0 10px rgba(34,197,94,0.55);}
+.led-caption{font-family:var(--mono); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;}
+
+.motion-badge{
+  display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:15px;
+  font-weight:700; padding:4px 0; text-transform:uppercase;
+}
+.motion-idle{color:var(--text-dim);}
+.motion-motion{color:#2563EB;}
+.motion-step{color:var(--green);}
+.motion-fall{color:var(--red);}
+
+.charts-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:24px;}
+.chart-panel{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:18px; box-shadow: var(--shadow);}
+.chart-panel h3{font-family:var(--display); font-size:14px; font-weight:600; margin-bottom:14px; color:var(--text);}
+.chart-panel.full{grid-column:1/-1;}
+canvas{max-height:240px;}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{border-right:none; border-top:1px solid var(--line);}
+  .charts-grid{grid-template-columns:1fr;}
+  .nav-tabs{display:none;}
+}
+</style>
+</head>
+<body class="notranslate" translate="no">
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">SH</div>
+    <div class="brand-text">
+      <h1>Smart Helmet</h1>
+      <p>Live Worker Safety Monitor</p>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <a href="index.html" class="active">Live Monitor</a>
+    <a href="workers.html">Worker Profiles</a>
+  </div>
+  <div class="topbar-right">
+    <button class="action-btn" id="exportBtn" title="Export all readings to Excel">⬇ Export Excel</button>
+    <button class="action-btn" id="resetReadingsBtn" title="Clear all stored sensor readings and start a fresh session">🗑 Reset Readings</button>
+    <button class="action-btn" id="resetBtn" title="Restart the selected helmet's ESP32">⟳ Reset Device</button>
+    <button class="emergency-btn" id="emergencyBtn" title="Trigger an emergency alert for the selected helmet">🚨 EMERGENCY</button>
+    <div class="conn-status">
+      <div class="dot" id="connDot"></div>
+      <span id="connText">Connected</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Select Helmet / Worker</div>
+    <select class="worker-select" id="helmetSelect">
+      <option value="helmet-001">Helmet-001</option>
+    </select>
+
+    <div class="sidebar-label">Overall Risk Level</div>
+    <div class="risk-gauge low" id="riskGauge">
+      <div class="label">Final Risk Score</div>
+      <div class="value" id="riskValue">—</div>
+      <div class="status-badge" id="riskBadge" style="color:var(--green); background:var(--green-bg);">LOW</div>
+    </div>
+
+    <div class="sidebar-label" style="display:flex; align-items:center; justify-content:space-between;">
+      <span>Latest Alerts</span>
+      <button id="clearAlertsBtn" title="Clear all alerts and start fresh"
+        style="font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.5px;
+        color:var(--text-dim); background:none; border:1px solid var(--line-strong); border-radius:4px;
+        padding:2px 7px; cursor:pointer;">Clear</button>
+    </div>
+    <div class="incidents" id="incidentsList">
+      <p style="color:var(--text-dim); font-size:12px;">No alerts yet</p>
+    </div>
+  </aside>
+
+  <!-- ===== Main content ===== -->
+  <main class="main">
+
+    <div class="section-title">Live Readings</div>
+    <div class="cards-grid">
+      <div class="metric-card">
+        <div class="m-status status-safe" id="dot-gas"></div>
+        <div class="m-label">Gas Level (MQ135)</div>
+        <div class="m-value" id="val-gas">— <span class="m-unit">raw</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Temperature</div>
+        <div class="m-value" id="val-temp">— <span class="m-unit">°C</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Humidity</div>
+        <div class="m-value" id="val-humidity">— <span class="m-unit">%</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="m-status status-safe" id="dot-fall"></div>
+        <div class="m-label">Motion Status</div>
+        <div class="motion-badge" id="val-fall">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-status status-safe" id="dot-helmet"></div>
+        <div class="m-label">Helmet Status</div>
+        <div class="m-value" id="val-helmet" style="font-size:18px;">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Air Quality</div>
+        <div class="m-value" id="val-air" style="font-size:18px;">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Helmet Status LED</div>
+        <div class="led-row">
+          <span class="led red" id="ledRed"></span>
+          <span class="led yellow" id="ledYellow"></span>
+          <span class="led green" id="ledGreen"></span>
+          <span class="led-caption" id="ledCaption" style="color:var(--text-dim);">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Readings Over Time</div>
+    <div class="charts-grid">
+      <div class="chart-panel">
+        <h3>Gas Level (MQ135)</h3>
+        <canvas id="gasChart"></canvas>
+      </div>
+      <div class="chart-panel">
+        <h3>Temperature &amp; Humidity</h3>
+        <canvas id="envChart"></canvas>
+      </div>
+      <div class="chart-panel full">
+        <h3>Accelerometer (X / Y / Z)</h3>
+        <canvas id="accelChart"></canvas>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function utcToLocal(utcString){
+  const isoUtc = utcString.replace(' ', 'T') + 'Z';
+  return new Date(isoUtc);
+}
+function formatLocalTime(utcString){
+  return utcToLocal(utcString).toLocaleTimeString();
+}
+function formatLocalDateTime(utcString){
+  return utcToLocal(utcString).toLocaleString();
+}
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+const API_BASE = window.location.origin + '/api';
+let HELMET_ID = 'helmet-001';
+const POLL_MS = 2000;
+const HISTORY_LIMIT = 40;
+const DEVICE_STALE_MS = 12000;
+
+function makeLineChart(ctx, datasets, yLabel){
+  return new Chart(ctx, {
+    type:'line',
+    data:{ labels: [], datasets },
+    options:{
+      responsive:true,
+      animation:{duration:300},
+      interaction:{mode:'index', intersect:false},
+      scales:{
+        x:{ ticks:{color:'#5B6B7F', font:{family:'JetBrains Mono', size:9}}, grid:{color:'#E2E6EC'} },
+        y:{ ticks:{color:'#5B6B7F', font:{family:'JetBrains Mono', size:9}}, grid:{color:'#E2E6EC'}, title:{display:!!yLabel, text:yLabel, color:'#5B6B7F'} }
+      },
+      plugins:{ legend:{labels:{color:'#1A2433', font:{family:'Inter', size:11}}} }
+    }
+  });
+}
+
+const gasChart = makeLineChart(document.getElementById('gasChart'), [
+  {label:'Gas (raw)', data:[], borderColor:'#FF6B35', backgroundColor:'rgba(255,107,53,0.10)', tension:0.3, fill:true},
+]);
+
+const envChart = makeLineChart(document.getElementById('envChart'), [
+  {label:'Temp (°C)', data:[], borderColor:'#15803D', backgroundColor:'transparent', tension:0.3},
+  {label:'Humidity (%)', data:[], borderColor:'#2563EB', backgroundColor:'transparent', tension:0.3},
+]);
+
+const accelChart = makeLineChart(document.getElementById('accelChart'), [
+  {label:'X', data:[], borderColor:'#FF6B35', backgroundColor:'transparent', tension:0.2, pointRadius:0},
+  {label:'Y', data:[], borderColor:'#15803D', backgroundColor:'transparent', tension:0.2, pointRadius:0},
+  {label:'Z', data:[], borderColor:'#2563EB', backgroundColor:'transparent', tension:0.2, pointRadius:0},
+]);
+
+// ---------- Helper functions ----------
+function statusClass(status){
+  if(status === 'Safe') return 'status-safe';
+  if(status === 'Moderate') return 'status-moderate';
+  return 'status-dangerous';
+}
+
+const MOTION_DISPLAY = {
+  idle:   { text: 'IDLE',   icon: '●', cls: 'motion-idle'   },
+  motion: { text: 'MOTION', icon: '◐', cls: 'motion-motion' },
+  step:   { text: 'WALKING',icon: '◑', cls: 'motion-step'   },
+  fall:   { text: 'FALL DETECTED', icon: '⚠', cls: 'motion-fall' },
+};
+function renderMotionBadge(status){
+  const info = MOTION_DISPLAY[status] || { text: status, icon: '●', cls: 'motion-idle' };
+  const el = document.getElementById('val-fall');
+  el.className = 'motion-badge ' + info.cls;
+  el.textContent = info.icon + ' ' + info.text;
+}
+
+function ledColorFromResponse(d){
+  if(d.fall_status === 'fall' || d.air_quality_status === 'Dangerous' || d.buzzer_on) return 'red';
+  if(d.air_quality_status === 'Moderate' || !d.helmet_worn) return 'yellow';
+  return 'green';
+}
+const LED_CAPTIONS = {
+  red:    { text: 'DANGER',  color: 'var(--red)' },
+  yellow: { text: 'WARNING', color: '#B45309' },
+  green:  { text: 'SAFE',    color: 'var(--green)' },
+};
+function setLedIndicator(color){
+  ['red','yellow','green'].forEach(c => {
+    document.getElementById('led' + c[0].toUpperCase() + c.slice(1))
+      .classList.toggle('on', c === color);
+  });
+  const cap = document.getElementById('ledCaption');
+  const info = LED_CAPTIONS[color];
+  cap.textContent = info.text;
+  cap.style.color = info.color;
+}
+
+function setRiskGauge(level, score){
+  const gauge = document.getElementById('riskGauge');
+  const badge = document.getElementById('riskBadge');
+  gauge.className = 'risk-gauge ' + level.toLowerCase();
+  document.getElementById('riskValue').textContent = score;
+  badge.textContent = level.toUpperCase();
+  const colors = {
+    Low:      {fg:'#15803D', bg:'#ECFDF3'},
+    Medium:   {fg:'#B45309', bg:'#FFFBEB'},
+    High:     {fg:'#D85420', bg:'#FFF1EB'},
+    Critical: {fg:'#DC2626', bg:'#FEF2F2'},
+  };
+  const c = colors[level] || colors.Low;
+  badge.style.color = c.fg;
+  badge.style.background = c.bg;
+}
+
+function setConnStatus(state, text){
+  const dot = document.getElementById('connDot');
+  const txt = document.getElementById('connText');
+  dot.classList.remove('offline');
+  dot.style.background = '';
+  if(state === 'ok'){  }
+  else if(state === 'warn'){ dot.style.background = 'var(--yellow)'; }
+  else { dot.classList.add('offline'); }
+  txt.textContent = text;
+}
+
+// ---------- Fetch latest reading ----------
+async function fetchLatest(){
+  let res;
+  try{
+    res = await fetch(`${API_BASE}/latest/${HELMET_ID}`);
+  }catch(e){
+    setConnStatus('offline', 'Server Offline');
+    return;
+  }
+  try{
+    if(res.status === 404){
+      setConnStatus('warn', 'Awaiting First Reading');
+      return;
+    }
+    if(!res.ok) throw new Error('bad response');
+    const d = await res.json();
+
+    const ageMs = Date.now() - utcToLocal(d.timestamp).getTime();
+    if(ageMs > DEVICE_STALE_MS){
+      const ageText = ageMs < 120000 ? Math.round(ageMs/1000) + 's' : Math.round(ageMs/60000) + 'min';
+      setConnStatus('offline', `Device Offline — last seen ${ageText} ago`);
+    } else {
+      setConnStatus('ok', 'Live — updated ' + formatLocalTime(d.timestamp));
+    }
+
+    document.getElementById('val-gas').innerHTML = Math.round(d.gas_ppm) + ' <span class="m-unit">raw</span>';
+    document.getElementById('val-temp').innerHTML = d.temperature.toFixed(1) + ' <span class="m-unit">°C</span>';
+    document.getElementById('val-humidity').innerHTML = d.humidity.toFixed(1) + ' <span class="m-unit">%</span>';
+    renderMotionBadge(d.fall_status);
+    document.getElementById('val-helmet').textContent = d.helmet_worn ? 'Worn ✓' : 'Removed ⚠';
+    document.getElementById('val-air').textContent = d.air_quality_status;
+
+    const cls = statusClass(d.air_quality_status);
+    document.getElementById('dot-gas').className = 'm-status ' + cls;
+    document.getElementById('dot-fall').className = 'm-status ' + (d.fall_status === 'fall' ? 'status-dangerous' : 'status-safe');
+    document.getElementById('dot-helmet').className = 'm-status ' + (d.helmet_worn ? 'status-safe' : 'status-dangerous');
+
+    setRiskGauge(d.risk_level, d.final_risk_score);
+    setLedIndicator(ledColorFromResponse(d));
+
+  }catch(e){
+    console.error('fetchLatest:', e);
+    setConnStatus('offline', 'Data Error');
+  }
+}
+
+// ---------- Fetch reading history for charts ----------
+async function fetchHistory(){
+  try{
+    const res = await fetch(`${API_BASE}/history/${HELMET_ID}?limit=${HISTORY_LIMIT}`);
+    if(!res.ok) return;
+    const rows = await res.json();
+    const labels = rows.map(r => formatLocalTime(r.timestamp));
+
+    gasChart.data.labels = labels;
+    gasChart.data.datasets[0].data = rows.map(r=>r.gas_ppm);
+    gasChart.update();
+
+    envChart.data.labels = labels;
+    envChart.data.datasets[0].data = rows.map(r=>r.temperature);
+    envChart.data.datasets[1].data = rows.map(r=>r.humidity);
+    envChart.update();
+
+    accelChart.data.labels = labels;
+    accelChart.data.datasets[0].data = rows.map(r=>r.accel_x);
+    accelChart.data.datasets[1].data = rows.map(r=>r.accel_y);
+    accelChart.data.datasets[2].data = rows.map(r=>r.accel_z);
+    accelChart.update();
+  }catch(e){ console.error(e); }
+}
+
+// ---------- Fetch latest incidents ----------
+async function fetchIncidents(){
+  try{
+    const res = await fetch(`${API_BASE}/incidents?limit=8`);
+    const rows = await res.json();
+    const el = document.getElementById('incidentsList');
+    if(rows.length === 0){
+      el.innerHTML = '<p style="color:var(--text-dim); font-size:12px;">No alerts yet</p>';
+      return;
+    }
+    el.innerHTML = rows.map(r => `
+      <div class="incident-item">
+        <span class="itype">${escapeHtml(r.incident_type)}</span>
+        <span>${escapeHtml(r.helmet_id)} — ${escapeHtml(r.severity)}</span>
+        <span class="itime">${formatLocalDateTime(r.timestamp)}</span>
+      </div>
+    `).join('');
+  }catch(e){ console.error(e); }
+}
+
+// ---------- Load helmet list into the select ----------
+async function loadHelmetList(){
+  try{
+    const res = await fetch(`${API_BASE}/helmets`);
+    if(!res.ok) return;
+    const helmets = await res.json();
+    const sel = document.getElementById('helmetSelect');
+    if(helmets.length){
+      const current = sel.value;
+      sel.innerHTML = helmets.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+      if(helmets.includes(current)) sel.value = current;
+      HELMET_ID = sel.value;
+    }
+  }catch(e){ console.error(e); }
+}
+
+// ---------- Export all readings to Excel ----------
+async function exportExcel(){
+  const btn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+  try{
+    const tzOffsetMinutes = -new Date().getTimezoneOffset();
+    const res = await fetch(`${API_BASE}/export/excel?tz_offset_minutes=${tzOffsetMinutes}`);
+    if(!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="(.+)"/);
+    a.download = match ? match[1] : 'smart_helmet_readings.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Export failed — no readings available yet, or server unreachable.');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '⬇ Export Excel';
+  }
+}
+document.getElementById('exportBtn').addEventListener('click', exportExcel);
+
+// ---------- Reset device (queues a reset command for ESP32 to pick up) ----------
+async function resetDevice(){
+  if(!confirm(`Restart the ESP32 for ${HELMET_ID}?\n\nThe device will reconnect automatically within a few seconds.`)) return;
+  const btn = document.getElementById('resetBtn');
+  btn.disabled = true;
+  btn.textContent = 'Resetting…';
+  try{
+    const res = await fetch(`${API_BASE}/reset/${HELMET_ID}`, { method: 'POST' });
+    if(!res.ok) throw new Error('Reset request failed');
+    alert(`Reset command queued for ${HELMET_ID}. The device will restart on its next check-in (within ~2 seconds).`);
+  }catch(e){
+    alert('Failed to queue reset — check server connection.');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '⟳ Reset Device';
+  }
+}
+document.getElementById('resetBtn').addEventListener('click', resetDevice);
+
+// ---------- Reset readings (clears stored sensor readings to start a fresh export session) ----------
+async function resetReadings(){
+  if(!confirm(`Clear ALL stored sensor readings (for every helmet)?\n\nThis cannot be undone. New readings will keep arriving normally — your next Excel export will only contain readings recorded after this point.`)) return;
+  const btn = document.getElementById('resetReadingsBtn');
+  btn.disabled = true;
+  btn.textContent = 'Clearing…';
+  try{
+    const res = await fetch(`${API_BASE}/readings`, { method: 'DELETE' });
+    if(!res.ok) throw new Error('Reset readings failed');
+    fetchHistory();
+  }catch(e){
+    alert('Failed to clear readings — check server connection.');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '🗑 Reset Readings';
+  }
+}
+document.getElementById('resetReadingsBtn').addEventListener('click', resetReadings);
+
+// ---------- Clear alerts (wipes the incident log to start a fresh alerts session) ----------
+async function clearAlerts(){
+  if(!confirm('Clear all alerts/incidents?\n\nThis cannot be undone.')) return;
+  const btn = document.getElementById('clearAlertsBtn');
+  btn.disabled = true;
+  try{
+    const res = await fetch(`${API_BASE}/incidents`, { method: 'DELETE' });
+    if(!res.ok) throw new Error('Clear alerts failed');
+    fetchIncidents();
+  }catch(e){
+    alert('Failed to clear alerts — check server connection.');
+  }finally{
+    btn.disabled = false;
+  }
+}
+document.getElementById('clearAlertsBtn').addEventListener('click', clearAlerts);
+
+// ---------- Emergency alert (manually triggered from dashboard, mirrors physical button) ----------
+async function triggerEmergency(){
+  if(!confirm(`Send an EMERGENCY alert for ${HELMET_ID}?\n\nThe helmet buzzer will sound the evacuation pattern for 10 seconds, then stop automatically. This is logged as a critical incident.`)) return;
+  try{
+    const res = await fetch(`${API_BASE}/emergency`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ helmet_id: HELMET_ID })
+    });
+    if(!res.ok) throw new Error('Emergency request failed');
+    fetchIncidents();
+  }catch(e){
+    alert('Failed to send emergency alert — check server connection.');
+  }
+}
+document.getElementById('emergencyBtn').addEventListener('click', triggerEmergency);
+
+document.getElementById('helmetSelect').addEventListener('change', (e)=>{
+  HELMET_ID = e.target.value;
+  fetchLatest(); fetchHistory();
+});
+
+function pollAll(){ fetchLatest(); fetchHistory(); fetchIncidents(); }
+loadHelmetList().then(pollAll);
+setInterval(pollAll, POLL_MS);
+setInterval(loadHelmetList, 10000);
+</script>
+
+</body>
+</html>
