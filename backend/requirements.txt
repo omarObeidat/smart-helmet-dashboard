@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-scikit-learn
-joblib
-numpy
-pydantic
-pandas
-openpyxl
